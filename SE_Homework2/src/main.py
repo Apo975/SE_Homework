@@ -22,7 +22,8 @@ SUBTLE_TEXT_COLOR = (116, 103, 120)
 PANEL_COLOR = (255, 249, 224)
 SHADOW_COLOR = (118, 184, 205)
 HOVER_COLOR = (255, 166, 86)
-FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
+# 使用独立的黑体文件，避免字体集合和强制加粗造成边缘发糊。
+FONT_PATH = Path(r"C:\Windows\Fonts\simhei.ttf")
 ARROW_COLOR = (255, 157, 73)
 ARROW_HEAD_COLOR = (239, 103, 74)
 SELECTED_COLOR = (255, 209, 75)
@@ -113,7 +114,6 @@ def load_font(size: int) -> pygame.font.Font:
         font = pygame.font.Font(str(FONT_PATH), size)
     else:
         font = pygame.font.Font(None, size)
-    font.set_bold(True)
     return font
 
 
