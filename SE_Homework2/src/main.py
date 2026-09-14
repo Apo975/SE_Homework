@@ -110,8 +110,11 @@ def draw_board(screen: pygame.Surface) -> None:
 def load_font(size: int) -> pygame.font.Font:
     """直接加载 Windows 中文字体，避免 Pygame 自动扫描字体异常。"""
     if FONT_PATH.exists():
-        return pygame.font.Font(str(FONT_PATH), size)
-    return pygame.font.Font(None, size)
+        font = pygame.font.Font(str(FONT_PATH), size)
+    else:
+        font = pygame.font.Font(None, size)
+    font.set_bold(True)
+    return font
 
 
 def draw_cartoon_background(screen: pygame.Surface) -> None:
@@ -146,46 +149,35 @@ def draw_arrow(
 
     center_x = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE // 2 + offset[0]
     center_y = BOARD_TOP + row * CELL_SIZE + CELL_SIZE // 2 + offset[1]
-    half_length = 28
-    head_width = 22
+    # 以向右为基准的圆润箭头轮廓，再根据方向旋转。
+    base_points = [
+        (-28, -12),
+        (8, -12),
+        (8, -25),
+        (35, 0),
+        (8, 25),
+        (8, 12),
+        (-28, 12),
+    ]
 
-    if direction == "up":
-        shaft_start = (center_x, center_y + half_length)
-        shaft_end = (center_x, center_y - half_length)
-        head = [
-            (center_x, center_y - half_length - 12),
-            (center_x - head_width, center_y - half_length + 12),
-            (center_x + head_width, center_y - half_length + 12),
-        ]
-    elif direction == "down":
-        shaft_start = (center_x, center_y - half_length)
-        shaft_end = (center_x, center_y + half_length)
-        head = [
-            (center_x, center_y + half_length + 12),
-            (center_x - head_width, center_y + half_length - 12),
-            (center_x + head_width, center_y + half_length - 12),
-        ]
-    elif direction == "left":
-        shaft_start = (center_x + half_length, center_y)
-        shaft_end = (center_x - half_length, center_y)
-        head = [
-            (center_x - half_length - 12, center_y),
-            (center_x - half_length + 12, center_y - head_width),
-            (center_x - half_length + 12, center_y + head_width),
-        ]
-    else:  # right
-        shaft_start = (center_x - half_length, center_y)
-        shaft_end = (center_x + half_length, center_y)
-        head = [
-            (center_x + half_length + 12, center_y),
-            (center_x + half_length - 12, center_y - head_width),
-            (center_x + half_length - 12, center_y + head_width),
-        ]
+    def transform(point: tuple[int, int]) -> tuple[int, int]:
+        x, y = point
+        if direction == "down":
+            x, y = -y, x
+        elif direction == "left":
+            x, y = -x, -y
+        elif direction == "up":
+            x, y = y, -x
+        return center_x + x, center_y + y
 
+    points = [transform(point) for point in base_points]
     arrow_color = color or ARROW_COLOR
-    head_color = color or ARROW_HEAD_COLOR
-    pygame.draw.line(screen, arrow_color, shaft_start, shaft_end, width=12)
-    pygame.draw.polygon(screen, head_color, head)
+    pygame.draw.polygon(screen, (111, 75, 84), points)
+    inner_points = [
+        transform((int(x * 0.9), int(y * 0.9))) for x, y in base_points
+    ]
+    pygame.draw.polygon(screen, arrow_color, inner_points)
+    pygame.draw.lines(screen, (255, 224, 158), False, inner_points[:3], width=3)
 
 
 def draw_arrows(
