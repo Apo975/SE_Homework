@@ -32,7 +32,7 @@ BLOCKED_COLOR = (224, 79, 94)
 BUTTON_COLOR = (92, 174, 225)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
-START_BUTTON_RECT = pygame.Rect(270, 560, 180, 55)
+START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
 
 # 每个关卡由若干箭头组成，row 和 col 表示箭头所在的棋盘格。
 LEVELS = [
@@ -253,17 +253,19 @@ def draw_button(
 
 def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
     """绘制游戏开始界面。"""
-    card = pygame.Rect(120, 100, 480, 500)
+    card = pygame.Rect(100, 90, 520, 550)
     pygame.draw.rect(screen, SHADOW_COLOR, card.move(0, 8), border_radius=20)
     pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=20)
 
     title = font.render("一箭又一箭", True, TEXT_COLOR)
-    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 170))
+    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 175))
     screen.blit(title, title_rect)
 
-    instruction = font.render("按照合适的顺序点击箭头，清空棋盘", True, SUBTLE_TEXT_COLOR)
-    instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 300))
-    screen.blit(instruction, instruction_rect)
+    instruction_lines = ("按照合适的顺序点击箭头", "清空棋盘即可通关")
+    for index, line in enumerate(instruction_lines):
+        instruction = font.render(line, True, SUBTLE_TEXT_COLOR)
+        instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 300 + index * 42))
+        screen.blit(instruction, instruction_rect)
 
     draw_button(screen, font, "开始游戏", START_BUTTON_RECT, pygame.mouse.get_pos())
 
@@ -421,19 +423,20 @@ def main() -> None:
                 "right": (distance, 0),
             }[direction]
             draw_arrow(screen, flying_arrow, offset)
-        feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
-        feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
-        screen.blit(feedback_text, feedback_rect)
+        if game_state == "playing":
+            feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
+            feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
+            screen.blit(feedback_text, feedback_rect)
 
         if game_state == "success":
             result = font.render("恭喜通关！", True, SUCCESS_COLOR)
-            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
+            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 715))
             screen.blit(result, result_rect)
             button_text = "下一关" if current_level < len(LEVELS) - 1 else "重新开始"
             draw_button(screen, font, button_text, BUTTON_RECT, pygame.mouse.get_pos())
         elif game_state == "failed":
             result = font.render("挑战失败", True, FEEDBACK_COLOR)
-            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
+            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 715))
             screen.blit(result, result_rect)
             draw_button(screen, font, "重新开始", BUTTON_RECT, pygame.mouse.get_pos())
 
