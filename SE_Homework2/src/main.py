@@ -33,6 +33,7 @@ BLOCKED_COLOR = (232, 79, 105)
 BUTTON_COLOR = (105, 83, 217)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 815, 180, 48)
+PLAY_RESTART_BUTTON_RECT = pygame.Rect(585, 725, 115, 52)
 START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
 DIRECTION_COLORS = {
     "up": (89, 126, 247),
@@ -436,6 +437,16 @@ def main() -> None:
                 if mistakes_left == 0:
                     feedback = "失误次数已用完，请重新开始"
                     continue
+                if PLAY_RESTART_BUTTON_RECT.collidepoint(event.pos):
+                    reset_game(current_level)
+                    selected_index = None
+                    mistakes_left = 3
+                    feedback = "已重新开始当前关卡"
+                    flying_arrow = None
+                    flying_progress = 0.0
+                    shake_index = None
+                    shake_frame = 0
+                    continue
                 selected_index = get_arrow_at_position(event.pos)
                 if selected_index is None:
                     feedback = "这里没有箭头"
@@ -477,6 +488,13 @@ def main() -> None:
             draw_arrow(screen, flying_arrow, offset)
         if game_state == "playing":
             draw_feedback_panel(screen, font, feedback)
+            draw_button(
+                screen,
+                status_font,
+                "重开",
+                PLAY_RESTART_BUTTON_RECT,
+                pygame.mouse.get_pos(),
+            )
 
         if game_state == "success":
             button_text = "下一关" if current_level < len(LEVELS) - 1 else "返回开始"
