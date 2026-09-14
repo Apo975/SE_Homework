@@ -1,6 +1,7 @@
 """一箭又一箭：第一阶段的窗口和基础棋盘。"""
 
 import sys
+import math
 from pathlib import Path
 
 import pygame
@@ -23,6 +24,7 @@ ARROW_HEAD_COLOR = (45, 90, 180)
 SELECTED_COLOR = (245, 180, 45)
 FEEDBACK_COLOR = (210, 90, 70)
 SUCCESS_COLOR = (45, 155, 90)
+BLOCKED_COLOR = (220, 75, 75)
 BUTTON_COLOR = (70, 125, 220)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
@@ -95,14 +97,19 @@ def load_font(size: int) -> pygame.font.Font:
     return pygame.font.Font(None, size)
 
 
-def draw_arrow(screen: pygame.Surface, arrow: dict) -> None:
+def draw_arrow(
+    screen: pygame.Surface,
+    arrow: dict,
+    offset: tuple[int, int] = (0, 0),
+    color: tuple[int, int, int] | None = None,
+) -> None:
     """在指定的棋盘格中绘制一个箭头。"""
     row = arrow["row"]
     col = arrow["col"]
     direction = arrow["direction"]
 
-    center_x = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE // 2
-    center_y = BOARD_TOP + row * CELL_SIZE + CELL_SIZE // 2
+    center_x = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE // 2 + offset[0]
+    center_y = BOARD_TOP + row * CELL_SIZE + CELL_SIZE // 2 + offset[1]
     half_length = 28
     head_width = 22
 
@@ -139,14 +146,26 @@ def draw_arrow(screen: pygame.Surface, arrow: dict) -> None:
             (center_x + half_length - 12, center_y + head_width),
         ]
 
-    pygame.draw.line(screen, ARROW_COLOR, shaft_start, shaft_end, width=12)
-    pygame.draw.polygon(screen, ARROW_HEAD_COLOR, head)
+    arrow_color = color or ARROW_COLOR
+    head_color = color or ARROW_HEAD_COLOR
+    pygame.draw.line(screen, arrow_color, shaft_start, shaft_end, width=12)
+    pygame.draw.polygon(screen, head_color, head)
 
 
-def draw_arrows(screen: pygame.Surface, selected_index: int | None = None) -> None:
+def draw_arrows(
+    screen: pygame.Surface,
+    selected_index: int | None = None,
+    shake_index: int | None = None,
+    shake_frame: int = 0,
+) -> None:
     """绘制当前关卡中的全部箭头。"""
     for index, arrow in enumerate(ARROWS):
-        draw_arrow(screen, arrow)
+        offset = (0, 0)
+        color = None
+        if index == shake_index and shake_frame > 0:
+            offset = (int(math.sin(shake_frame * 1.8) * 8), 0)
+            color = BLOCKED_COLOR
+        draw_arrow(screen, arrow, offset, color)
         if index == selected_index:
             rect = pygame.Rect(
                 BOARD_LEFT + arrow["col"] * CELL_SIZE + 6,
@@ -239,9 +258,24 @@ def main() -> None:
     mistakes_left = 3
     game_state = "start"
     current_level = 0
+    flying_arrow = None
+    flying_progress = 0.0
+    shake_index = None
+    shake_frame = 0
 
     running = True
     while running:
+        if flying_arrow is not None:
+            flying_progress += 0.06
+            if flying_progress >= 1:
+                flying_arrow = None
+                flying_progress = 0.0
+                if not ARROWS:
+                    game_state = "success"
+
+        if shake_frame > 0:
+            shake_frame -= 1
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -254,6 +288,10 @@ def main() -> None:
                         selected_index = None
                         feedback = "请点击一个箭头"
                         game_state = "playing"
+                        flying_arrow = None
+                        flying_progress = 0.0
+                        shake_index = None
+                        shake_frame = 0
                     continue
                 if game_state != "playing":
                     if BUTTON_RECT.collidepoint(event.pos):
@@ -266,6 +304,10 @@ def main() -> None:
                         mistakes_left = 3
                         feedback = "请点击一个箭头"
                         game_state = "playing"
+                        flying_arrow = None
+                        flying_progress = 0.0
+                        shake_index = None
+                        shake_frame = 0
                     continue
                 if mistakes_left == 0:
                     feedback = "失误次数已用完，请重新开始"
@@ -275,6 +317,8 @@ def main() -> None:
                     feedback = "这里没有箭头"
                 elif is_blocked(ARROWS[selected_index], ARROWS):
                     mistakes_left -= 1
+                    shake_index = selected_index
+                    shake_frame = 18
                     selected_index = None
                     if mistakes_left == 0:
                         feedback = "失误次数已用完"
@@ -282,11 +326,10 @@ def main() -> None:
                     else:
                         feedback = f"前方有阻挡，失误次数 -1"
                 else:
-                    ARROWS.pop(selected_index)
+                    flying_arrow = ARROWS.pop(selected_index)
+                    flying_progress = 0.0
                     selected_index = None
                     feedback = "箭头飞出棋盘"
-                    if not ARROWS:
-                        game_state = "success"
 
         screen.fill(BACKGROUND_COLOR)
         if game_state == "start":
@@ -306,7 +349,17 @@ def main() -> None:
         status_rect = status.get_rect(center=(WINDOW_WIDTH // 2, 115))
         screen.blit(status, status_rect)
         draw_board(screen)
-        draw_arrows(screen, selected_index)
+        draw_arrows(screen, selected_index, shake_index, shake_frame)
+        if flying_arrow is not None:
+            distance = int(520 * flying_progress)
+            direction = flying_arrow["direction"]
+            offset = {
+                "up": (0, -distance),
+                "down": (0, distance),
+                "left": (-distance, 0),
+                "right": (distance, 0),
+            }[direction]
+            draw_arrow(screen, flying_arrow, offset)
         feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
         feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
         screen.blit(feedback_text, feedback_rect)
