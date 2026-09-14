@@ -179,6 +179,7 @@ def main() -> None:
     font = load_font(32)
     selected_index = None
     feedback = "请点击一个箭头"
+    mistakes_left = 3
 
     running = True
     while running:
@@ -186,18 +187,35 @@ def main() -> None:
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if mistakes_left == 0:
+                    feedback = "失误次数已用完，请重新开始"
+                    continue
                 selected_index = get_arrow_at_position(event.pos)
                 if selected_index is None:
                     feedback = "这里没有箭头"
                 elif is_blocked(ARROWS[selected_index], ARROWS):
-                    feedback = "前方有阻挡"
+                    mistakes_left -= 1
+                    selected_index = None
+                    if mistakes_left == 0:
+                        feedback = "失误次数已用完"
+                    else:
+                        feedback = f"前方有阻挡，失误次数 -1"
                 else:
-                    feedback = "前方无阻挡"
+                    ARROWS.pop(selected_index)
+                    selected_index = None
+                    feedback = "箭头飞出棋盘"
 
         screen.fill(BACKGROUND_COLOR)
         title = font.render("一箭又一箭", True, TEXT_COLOR)
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
         screen.blit(title, title_rect)
+        status = font.render(
+            f"剩余箭头：{len(ARROWS)}    剩余失误：{mistakes_left}",
+            True,
+            TEXT_COLOR,
+        )
+        status_rect = status.get_rect(center=(WINDOW_WIDTH // 2, 115))
+        screen.blit(status, status_rect)
         draw_board(screen)
         draw_arrows(screen, selected_index)
         feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
