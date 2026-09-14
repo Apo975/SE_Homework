@@ -34,6 +34,7 @@ BUTTON_COLOR = (105, 83, 217)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 815, 180, 48)
 PLAY_RESTART_BUTTON_RECT = pygame.Rect(585, 725, 115, 52)
+PAUSE_BUTTON_RECT = pygame.Rect(585, 785, 115, 52)
 START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
 DIRECTION_COLORS = {
     "up": (89, 126, 247),
@@ -321,9 +322,10 @@ def draw_status_panel(
     level_count: int,
     arrow_count: int,
     mistakes_left: int,
+    elapsed_seconds: float,
 ) -> None:
     """绘制游戏中的顶部状态信息。"""
-    panel = pygame.Rect(40, 45, 640, 75)
+    panel = pygame.Rect(15, 45, 690, 75)
     pygame.draw.rect(screen, SHADOW_COLOR, panel.move(0, 5), border_radius=16)
     pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=16)
 
@@ -331,8 +333,9 @@ def draw_status_panel(
         ("关卡", f"{current_level + 1}/{level_count}", TEXT_COLOR),
         ("箭头", str(arrow_count), TEXT_COLOR),
         ("失误", str(mistakes_left), FEEDBACK_COLOR if mistakes_left <= 1 else TEXT_COLOR),
+        ("计时", format_time(elapsed_seconds), TEXT_COLOR),
     ]
-    centers = (150, 360, 570)
+    centers = (100, 275, 450, 620)
     for (label_text, value_text, value_color), center_x in zip(items, centers):
         label = font.render(label_text, True, SUBTLE_TEXT_COLOR)
         value = font.render(value_text, True, value_color)
@@ -343,6 +346,29 @@ def draw_status_panel(
         value_rect = value.get_rect(midleft=(label_rect.right + gap, 82))
         screen.blit(label, label_rect)
         screen.blit(value, value_rect)
+
+
+def format_time(elapsed_seconds: float) -> str:
+    """将秒数格式化为分:秒。"""
+    total_seconds = int(elapsed_seconds)
+    return f"{total_seconds // 60:02d}:{total_seconds % 60:02d}"
+
+
+def draw_pause_overlay(screen: pygame.Surface, font: pygame.font.Font) -> None:
+    """绘制暂停遮罩。"""
+    overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((25, 19, 55, 135))
+    screen.blit(overlay, (0, 0))
+
+    card = pygame.Rect(195, 350, 330, 130)
+    pygame.draw.rect(screen, (31, 24, 67), card.move(0, 7), border_radius=22)
+    pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=22)
+    title = font.render("游戏已暂停", True, TEXT_COLOR)
+    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 398))
+    screen.blit(title, title_rect)
+    hint = font.render("点击继续按钮恢复游戏", True, SUBTLE_TEXT_COLOR)
+    hint_rect = hint.get_rect(center=(WINDOW_WIDTH // 2, 442))
+    screen.blit(hint, hint_rect)
 
 
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
@@ -381,6 +407,8 @@ def main() -> None:
     mistakes_left = 3
     game_state = "start"
     current_level = 0
+    elapsed_seconds = 0.0
+    is_paused = False
     flying_arrow = None
     flying_progress = 0.0
     shake_index = None
@@ -388,7 +416,11 @@ def main() -> None:
 
     running = True
     while running:
-        if flying_arrow is not None:
+        delta_time = clock.tick(60) / 1000
+        if game_state == "playing" and not is_paused:
+            elapsed_seconds += delta_time
+
+        if flying_arrow is not None and not is_paused:
             flying_progress += 0.06
             if flying_progress >= 1:
                 flying_arrow = None
@@ -396,7 +428,7 @@ def main() -> None:
                 if not ARROWS:
                     game_state = "success"
 
-        if shake_frame > 0:
+        if shake_frame > 0 and not is_paused:
             shake_frame -= 1
 
         for event in pygame.event.get():
@@ -411,6 +443,8 @@ def main() -> None:
                         selected_index = None
                         feedback = "请点击一个箭头"
                         game_state = "playing"
+                        elapsed_seconds = 0.0
+                        is_paused = False
                         flying_arrow = None
                         flying_progress = 0.0
                         shake_index = None
@@ -429,10 +463,18 @@ def main() -> None:
                         mistakes_left = 3
                         feedback = "请点击一个箭头"
                         game_state = "playing"
+                        elapsed_seconds = 0.0
+                        is_paused = False
                         flying_arrow = None
                         flying_progress = 0.0
                         shake_index = None
                         shake_frame = 0
+                    continue
+                if PAUSE_BUTTON_RECT.collidepoint(event.pos):
+                    is_paused = not is_paused
+                    feedback = "游戏已暂停" if is_paused else "继续游戏"
+                    continue
+                if is_paused:
                     continue
                 if mistakes_left == 0:
                     feedback = "失误次数已用完，请重新开始"
@@ -442,6 +484,8 @@ def main() -> None:
                     selected_index = None
                     mistakes_left = 3
                     feedback = "已重新开始当前关卡"
+                    elapsed_seconds = 0.0
+                    is_paused = False
                     flying_arrow = None
                     flying_progress = 0.0
                     shake_index = None
@@ -470,10 +514,17 @@ def main() -> None:
         if game_state == "start":
             draw_start_screen(screen, font)
             pygame.display.flip()
-            clock.tick(60)
             continue
 
-        draw_status_panel(screen, status_font, current_level, len(LEVELS), len(ARROWS), mistakes_left)
+        draw_status_panel(
+            screen,
+            status_font,
+            current_level,
+            len(LEVELS),
+            len(ARROWS),
+            mistakes_left,
+            elapsed_seconds,
+        )
         draw_board(screen)
         draw_arrows(screen, selected_index, shake_index, shake_frame)
         if flying_arrow is not None:
@@ -487,12 +538,21 @@ def main() -> None:
             }[direction]
             draw_arrow(screen, flying_arrow, offset)
         if game_state == "playing":
+            if is_paused:
+                draw_pause_overlay(screen, font)
             draw_feedback_panel(screen, font, feedback)
             draw_button(
                 screen,
                 status_font,
                 "重开",
                 PLAY_RESTART_BUTTON_RECT,
+                pygame.mouse.get_pos(),
+            )
+            draw_button(
+                screen,
+                status_font,
+                "继续" if is_paused else "暂停",
+                PAUSE_BUTTON_RECT,
                 pygame.mouse.get_pos(),
             )
 
@@ -503,7 +563,6 @@ def main() -> None:
             draw_result_panel(screen, font, "挑战失败", FEEDBACK_COLOR, "重新开始")
 
         pygame.display.flip()
-        clock.tick(60)
 
     pygame.quit()
     sys.exit()
