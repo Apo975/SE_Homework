@@ -26,6 +26,7 @@ SUCCESS_COLOR = (45, 155, 90)
 BUTTON_COLOR = (70, 125, 220)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
+START_BUTTON_RECT = pygame.Rect(270, 560, 180, 55)
 
 # 每个关卡由若干箭头组成，row 和 col 表示箭头所在的棋盘格。
 LEVELS = [
@@ -187,6 +188,22 @@ def draw_button(screen: pygame.Surface, font: pygame.font.Font, text: str) -> No
     screen.blit(button_text, text_rect)
 
 
+def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
+    """绘制游戏开始界面。"""
+    title = font.render("一箭又一箭", True, TEXT_COLOR)
+    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 180))
+    screen.blit(title, title_rect)
+
+    instruction = font.render("按照合适的顺序点击箭头，清空棋盘", True, TEXT_COLOR)
+    instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 300))
+    screen.blit(instruction, instruction_rect)
+
+    pygame.draw.rect(screen, BUTTON_COLOR, START_BUTTON_RECT, border_radius=8)
+    button_text = font.render("开始游戏", True, BUTTON_TEXT_COLOR)
+    button_text_rect = button_text.get_rect(center=START_BUTTON_RECT.center)
+    screen.blit(button_text, button_text_rect)
+
+
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
     """判断箭头前进方向至棋盘边界之间是否存在其他箭头。"""
     row = arrow["row"]
@@ -220,7 +237,7 @@ def main() -> None:
     selected_index = None
     feedback = "请点击一个箭头"
     mistakes_left = 3
-    game_state = "playing"
+    game_state = "start"
     current_level = 0
 
     running = True
@@ -229,6 +246,15 @@ def main() -> None:
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if game_state == "start":
+                    if START_BUTTON_RECT.collidepoint(event.pos):
+                        reset_game(0)
+                        current_level = 0
+                        mistakes_left = 3
+                        selected_index = None
+                        feedback = "请点击一个箭头"
+                        game_state = "playing"
+                    continue
                 if game_state != "playing":
                     if BUTTON_RECT.collidepoint(event.pos):
                         if game_state == "success" and current_level < len(LEVELS) - 1:
@@ -263,6 +289,12 @@ def main() -> None:
                         game_state = "success"
 
         screen.fill(BACKGROUND_COLOR)
+        if game_state == "start":
+            draw_start_screen(screen, font)
+            pygame.display.flip()
+            clock.tick(60)
+            continue
+
         title = font.render("一箭又一箭", True, TEXT_COLOR)
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
         screen.blit(title, title_rect)
