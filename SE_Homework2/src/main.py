@@ -27,16 +27,37 @@ BUTTON_COLOR = (70, 125, 220)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
 
-# 第一关的固定箭头数据。row 和 col 表示箭头所在的棋盘格。
-INITIAL_ARROWS = [
-    {"row": 2, "col": 0, "direction": "right"},
-    {"row": 2, "col": 3, "direction": "up"},
-    {"row": 0, "col": 4, "direction": "down"},
-    {"row": 4, "col": 4, "direction": "left"},
-    {"row": 5, "col": 5, "direction": "up"},
-    {"row": 0, "col": 0, "direction": "right"},
+# 每个关卡由若干箭头组成，row 和 col 表示箭头所在的棋盘格。
+LEVELS = [
+    [
+        {"row": 2, "col": 0, "direction": "right"},
+        {"row": 2, "col": 3, "direction": "up"},
+        {"row": 0, "col": 4, "direction": "down"},
+        {"row": 4, "col": 4, "direction": "left"},
+        {"row": 5, "col": 5, "direction": "up"},
+        {"row": 0, "col": 0, "direction": "right"},
+    ],
+    [
+        {"row": 1, "col": 1, "direction": "down"},
+        {"row": 4, "col": 1, "direction": "down"},
+        {"row": 4, "col": 5, "direction": "left"},
+        {"row": 4, "col": 3, "direction": "up"},
+        {"row": 0, "col": 5, "direction": "down"},
+        {"row": 5, "col": 0, "direction": "right"},
+        {"row": 3, "col": 0, "direction": "up"},
+    ],
+    [
+        {"row": 0, "col": 2, "direction": "down"},
+        {"row": 3, "col": 2, "direction": "right"},
+        {"row": 3, "col": 5, "direction": "down"},
+        {"row": 3, "col": 1, "direction": "right"},
+        {"row": 5, "col": 4, "direction": "up"},
+        {"row": 1, "col": 0, "direction": "down"},
+        {"row": 5, "col": 0, "direction": "right"},
+        {"row": 1, "col": 5, "direction": "left"},
+    ],
 ]
-ARROWS = [arrow.copy() for arrow in INITIAL_ARROWS]
+ARROWS = [arrow.copy() for arrow in LEVELS[0]]
 
 
 def draw_board(screen: pygame.Surface) -> None:
@@ -152,10 +173,10 @@ def get_arrow_at_position(position: tuple[int, int]) -> int | None:
     return None
 
 
-def reset_game() -> None:
-    """恢复当前关卡的初始箭头布局。"""
+def reset_game(level_index: int) -> None:
+    """恢复指定关卡的初始箭头布局。"""
     ARROWS.clear()
-    ARROWS.extend(arrow.copy() for arrow in INITIAL_ARROWS)
+    ARROWS.extend(arrow.copy() for arrow in LEVELS[level_index])
 
 
 def draw_button(screen: pygame.Surface, font: pygame.font.Font, text: str) -> None:
@@ -200,6 +221,7 @@ def main() -> None:
     feedback = "请点击一个箭头"
     mistakes_left = 3
     game_state = "playing"
+    current_level = 0
 
     running = True
     while running:
@@ -209,7 +231,11 @@ def main() -> None:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if game_state != "playing":
                     if BUTTON_RECT.collidepoint(event.pos):
-                        reset_game()
+                        if game_state == "success" and current_level < len(LEVELS) - 1:
+                            current_level += 1
+                        elif game_state == "success":
+                            current_level = 0
+                        reset_game(current_level)
                         selected_index = None
                         mistakes_left = 3
                         feedback = "请点击一个箭头"
@@ -241,7 +267,7 @@ def main() -> None:
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
         screen.blit(title, title_rect)
         status = font.render(
-            f"剩余箭头：{len(ARROWS)}    剩余失误：{mistakes_left}",
+            f"第 {current_level + 1} 关 / {len(LEVELS)}    剩余箭头：{len(ARROWS)}    剩余失误：{mistakes_left}",
             True,
             TEXT_COLOR,
         )
@@ -257,7 +283,8 @@ def main() -> None:
             result = font.render("恭喜通关！", True, SUCCESS_COLOR)
             result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
             screen.blit(result, result_rect)
-            draw_button(screen, font, "重新开始")
+            button_text = "下一关" if current_level < len(LEVELS) - 1 else "重新开始"
+            draw_button(screen, font, button_text)
         elif game_state == "failed":
             result = font.render("挑战失败", True, FEEDBACK_COLOR)
             result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
