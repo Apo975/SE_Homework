@@ -112,19 +112,19 @@ python src\main.py
 
 ### 开始界面
 
-![开始界面](assets/start.png)
+<img src="assets/start.png" alt="开始界面" style="zoom: 33%;" />
 
 ### 游戏过程
 
-![游戏过程](assets/process.png)
+<img src="assets/process.png" alt="游戏过程" style="zoom:33%;" />
 
 ### 通关界面
 
-![通关界面](assets/success.png)
+<img src="assets/success.png" alt="通关界面" style="zoom: 33%;" />
 
 ### 失败界面
 
-![失败界面](assets/failed.png)
+<img src="assets/failed.png" alt="失败界面" style="zoom:33%;" />
 
 ## 自动化测试
 
