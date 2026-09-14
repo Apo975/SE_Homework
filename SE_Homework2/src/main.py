@@ -234,6 +234,10 @@ def draw_button(
 
 def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
     """绘制游戏开始界面。"""
+    card = pygame.Rect(120, 100, 480, 500)
+    pygame.draw.rect(screen, SHADOW_COLOR, card.move(0, 8), border_radius=20)
+    pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=20)
+
     title = font.render("一箭又一箭", True, TEXT_COLOR)
     title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 170))
     screen.blit(title, title_rect)
@@ -243,6 +247,31 @@ def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
     screen.blit(instruction, instruction_rect)
 
     draw_button(screen, font, "开始游戏", START_BUTTON_RECT, pygame.mouse.get_pos())
+
+
+def draw_status_panel(
+    screen: pygame.Surface,
+    font: pygame.font.Font,
+    current_level: int,
+    level_count: int,
+    arrow_count: int,
+    mistakes_left: int,
+) -> None:
+    """绘制游戏中的顶部状态信息。"""
+    panel = pygame.Rect(80, 45, 560, 75)
+    pygame.draw.rect(screen, SHADOW_COLOR, panel.move(0, 5), border_radius=16)
+    pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=16)
+
+    items = [
+        (f"第 {current_level + 1}/{level_count} 关", TEXT_COLOR),
+        (f"剩余箭头  {arrow_count}", TEXT_COLOR),
+        (f"剩余失误  {mistakes_left}", FEEDBACK_COLOR if mistakes_left <= 1 else TEXT_COLOR),
+    ]
+    centers = (170, 360, 550)
+    for (text, color), center_x in zip(items, centers):
+        label = font.render(text, True, color)
+        label_rect = label.get_rect(center=(center_x, 82))
+        screen.blit(label, label_rect)
 
 
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
@@ -360,16 +389,7 @@ def main() -> None:
             clock.tick(60)
             continue
 
-        title = font.render("一箭又一箭", True, TEXT_COLOR)
-        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
-        screen.blit(title, title_rect)
-        status = font.render(
-            f"第 {current_level + 1} 关 / {len(LEVELS)}    剩余箭头：{len(ARROWS)}    剩余失误：{mistakes_left}",
-            True,
-            TEXT_COLOR,
-        )
-        status_rect = status.get_rect(center=(WINDOW_WIDTH // 2, 115))
-        screen.blit(status, status_rect)
+        draw_status_panel(screen, font, current_level, len(LEVELS), len(ARROWS), mistakes_left)
         draw_board(screen)
         draw_arrows(screen, selected_index, shake_index, shake_frame)
         if flying_arrow is not None:
