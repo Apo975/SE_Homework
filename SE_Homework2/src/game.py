@@ -8,11 +8,11 @@ import pygame
 
 
 WINDOW_WIDTH = 720
-WINDOW_HEIGHT = 920
+WINDOW_HEIGHT = 760
 BOARD_SIZE = 6
-CELL_SIZE = 90
+CELL_SIZE = 70
 BOARD_LEFT = (WINDOW_WIDTH - BOARD_SIZE * CELL_SIZE) // 2
-BOARD_TOP = 150
+BOARD_TOP = 110
 
 TEXT_COLOR = (56, 48, 78)
 SUBTLE_TEXT_COLOR = (111, 100, 137)
@@ -26,13 +26,13 @@ SUCCESS_COLOR = (53, 184, 142)
 BLOCKED_COLOR = (232, 79, 105)
 BUTTON_COLOR = (105, 83, 217)
 BUTTON_TEXT_COLOR = (255, 255, 255)
-BUTTON_RECT = pygame.Rect(270, 815, 180, 48)
-FINAL_BUTTON_RECT = pygame.Rect(270, 510, 180, 52)
-PLAY_RESTART_BUTTON_RECT = pygame.Rect(585, 725, 115, 52)
-PAUSE_BUTTON_RECT = pygame.Rect(585, 785, 115, 52)
-START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
-START_EXIT_BUTTON_RECT = pygame.Rect(270, 575, 180, 48)
-PAUSE_EXIT_BUTTON_RECT = pygame.Rect(285, 485, 150, 46)
+BUTTON_RECT = pygame.Rect(270, 650, 180, 46)
+FINAL_BUTTON_RECT = pygame.Rect(270, 450, 180, 48)
+PLAY_RESTART_BUTTON_RECT = pygame.Rect(585, 550, 115, 46)
+PAUSE_BUTTON_RECT = pygame.Rect(585, 610, 115, 46)
+START_BUTTON_RECT = pygame.Rect(270, 440, 180, 50)
+START_EXIT_BUTTON_RECT = pygame.Rect(270, 505, 180, 44)
+PAUSE_EXIT_BUTTON_RECT = pygame.Rect(285, 405, 150, 44)
 DIRECTION_COLORS = {
     "up": (89, 126, 247),
     "down": (239, 113, 116),
@@ -283,7 +283,7 @@ class ArrowGame:
         row, col, direction = arrow["row"], arrow["col"], arrow["direction"]
         center_x = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE // 2 + offset[0]
         center_y = BOARD_TOP + row * CELL_SIZE + CELL_SIZE // 2 + offset[1]
-        base_points = [(-28, -12), (8, -12), (8, -25), (35, 0), (8, 25), (8, 12), (-28, 12)]
+        base_points = [(-22, -9), (6, -9), (6, -20), (28, 0), (6, 20), (6, 9), (-22, 9)]
 
         def transform(point: tuple[int, int]) -> tuple[int, int]:
             x, y = point
@@ -297,10 +297,10 @@ class ArrowGame:
 
         points = [transform(point) for point in base_points]
         arrow_color = color or DIRECTION_COLORS[direction]
-        pygame.draw.circle(screen, (122, 110, 154), (center_x, center_y + 4), 35)
-        pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), 35)
-        pygame.draw.circle(screen, (232, 227, 247), (center_x, center_y), 35, width=2)
-        pygame.draw.circle(screen, (255, 255, 255), (center_x - 10, center_y - 11), 11)
+        pygame.draw.circle(screen, (122, 110, 154), (center_x, center_y + 4), 28)
+        pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), 28)
+        pygame.draw.circle(screen, (232, 227, 247), (center_x, center_y), 28, width=2)
+        pygame.draw.circle(screen, (255, 255, 255), (center_x - 8, center_y - 9), 8)
         pygame.draw.polygon(screen, (72, 61, 99), [(x + 2, y + 4) for x, y in points])
         pygame.draw.polygon(screen, arrow_color, points)
         pygame.draw.lines(screen, (255, 255, 255), False, points[:3], width=3)
@@ -327,27 +327,27 @@ class ArrowGame:
                 rect = pygame.Rect(
                     BOARD_LEFT + arrow["col"] * CELL_SIZE + 9,
                     BOARD_TOP + arrow["row"] * CELL_SIZE + 9,
-                    CELL_SIZE - 18,
-                    CELL_SIZE - 18,
+                CELL_SIZE - 18,
+                CELL_SIZE - 18,
                 )
                 pygame.draw.rect(screen, SELECTED_COLOR, rect, width=4, border_radius=18)
 
     def draw_start_screen(self, screen: pygame.Surface, mouse_pos: tuple[int, int]) -> None:
         assert self.font is not None
-        card = pygame.Rect(100, 90, 520, 550)
+        card = pygame.Rect(100, 55, 520, 530)
         pygame.draw.rect(screen, SHADOW_COLOR, card.move(0, 8), border_radius=20)
         pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=20)
         title = self.font.render("一箭又一箭", True, TEXT_COLOR)
-        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 175)))
+        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 135)))
         for index, line in enumerate(("按照合适的顺序点击箭头", "清空棋盘即可通关")):
             instruction = self.font.render(line, True, SUBTLE_TEXT_COLOR)
-            screen.blit(instruction, instruction.get_rect(center=(WINDOW_WIDTH // 2, 300 + index * 42)))
+            screen.blit(instruction, instruction.get_rect(center=(WINDOW_WIDTH // 2, 245 + index * 40)))
         self.draw_button(screen, self.font, "开始游戏", START_BUTTON_RECT, mouse_pos)
         self.draw_button(screen, self.status_font or self.font, "退出游戏", START_EXIT_BUTTON_RECT, mouse_pos)
 
     def draw_status_panel(self, screen: pygame.Surface) -> None:
         assert self.status_font is not None
-        panel = pygame.Rect(15, 45, 690, 75)
+        panel = pygame.Rect(15, 20, 690, 64)
         pygame.draw.rect(screen, SHADOW_COLOR, panel.move(0, 5), border_radius=16)
         pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=16)
         items = [
@@ -360,12 +360,12 @@ class ArrowGame:
             label = self.status_font.render(label_text, True, SUBTLE_TEXT_COLOR)
             value = self.status_font.render(value_text, True, value_color)
             start_x = center_x - (label.get_width() + 8 + value.get_width()) // 2
-            screen.blit(label, label.get_rect(midleft=(start_x, 82)))
-            screen.blit(value, value.get_rect(midleft=(start_x + label.get_width() + 8, 82)))
+            screen.blit(label, label.get_rect(midleft=(start_x, 52)))
+            screen.blit(value, value.get_rect(midleft=(start_x + label.get_width() + 8, 52)))
 
     def draw_feedback_panel(self, screen: pygame.Surface) -> None:
         assert self.font is not None
-        panel = pygame.Rect(150, 725, 420, 52)
+        panel = pygame.Rect(150, 550, 420, 46)
         pygame.draw.rect(screen, (31, 24, 67), panel.move(0, 5), border_radius=18)
         pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=18)
         pygame.draw.rect(screen, (218, 208, 242), panel, width=2, border_radius=18)
@@ -377,13 +377,13 @@ class ArrowGame:
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((25, 19, 55, 135))
         screen.blit(overlay, (0, 0))
-        card = pygame.Rect(195, 330, 330, 220)
+        card = pygame.Rect(195, 240, 330, 220)
         pygame.draw.rect(screen, (31, 24, 67), card.move(0, 7), border_radius=22)
         pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=22)
         title = self.font.render("游戏已暂停", True, TEXT_COLOR)
-        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 380)))
+        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 290)))
         hint = self.font.render("点击继续按钮恢复游戏", True, SUBTLE_TEXT_COLOR)
-        screen.blit(hint, hint.get_rect(center=(WINDOW_WIDTH // 2, 425)))
+        screen.blit(hint, hint.get_rect(center=(WINDOW_WIDTH // 2, 335)))
 
     def draw_result_panel(
         self,
@@ -393,18 +393,20 @@ class ArrowGame:
         button_text: str,
         mouse_pos: tuple[int, int],
         is_final: bool = False,
+        dim_background: bool = False,
     ) -> None:
         assert self.font is not None
-        if is_final:
+        if is_final or dim_background:
             overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
             overlay.fill((25, 19, 55, 150))
             screen.blit(overlay, (0, 0))
-            panel = pygame.Rect(110, 255, 500, 350)
-            badge = pygame.Rect(245, 315, 230, 62)
+        if is_final:
+            panel = pygame.Rect(110, 190, 500, 330)
+            badge = pygame.Rect(245, 245, 230, 58)
             action_rect = FINAL_BUTTON_RECT
         else:
-            panel = pygame.Rect(145, 710, 430, 175)
-            badge = pygame.Rect(245, 728, 230, 54)
+            panel = pygame.Rect(145, 535, 430, 175)
+            badge = pygame.Rect(245, 553, 230, 52)
             action_rect = BUTTON_RECT
         pygame.draw.rect(screen, (31, 24, 67), panel.move(0, 7), border_radius=22)
         pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=22)
@@ -452,7 +454,14 @@ class ArrowGame:
                 is_final=self.current_level == len(LEVELS) - 1,
             )
         else:
-            self.draw_result_panel(screen, "挑战失败", FEEDBACK_COLOR, "重新开始", mouse_pos)
+            self.draw_result_panel(
+                screen,
+                "挑战失败",
+                FEEDBACK_COLOR,
+                "重新开始",
+                mouse_pos,
+                dim_background=True,
+            )
 
     def run(self) -> None:
         pygame.init()
