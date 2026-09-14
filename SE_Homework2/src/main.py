@@ -8,32 +8,38 @@ import pygame
 
 
 WINDOW_WIDTH = 720
-WINDOW_HEIGHT = 820
+WINDOW_HEIGHT = 920
 BOARD_SIZE = 6
 CELL_SIZE = 90
 BOARD_LEFT = (WINDOW_WIDTH - BOARD_SIZE * CELL_SIZE) // 2
 BOARD_TOP = 150
 
-BACKGROUND_COLOR = (184, 232, 255)
-BOARD_COLOR = (255, 253, 241)
-GRID_COLOR = (224, 194, 139)
-TEXT_COLOR = (75, 63, 82)
-SUBTLE_TEXT_COLOR = (116, 103, 120)
-PANEL_COLOR = (255, 249, 224)
-SHADOW_COLOR = (118, 184, 205)
-HOVER_COLOR = (255, 166, 86)
+BACKGROUND_COLOR = (55, 45, 105)
+BOARD_COLOR = (245, 242, 255)
+GRID_COLOR = (221, 215, 242)
+TEXT_COLOR = (56, 48, 78)
+SUBTLE_TEXT_COLOR = (111, 100, 137)
+PANEL_COLOR = (249, 247, 255)
+SHADOW_COLOR = (31, 24, 67)
+HOVER_COLOR = (128, 103, 235)
 # 使用独立的黑体文件，避免字体集合和强制加粗造成边缘发糊。
 FONT_PATH = Path(r"C:\Windows\Fonts\simhei.ttf")
-ARROW_COLOR = (255, 157, 73)
-ARROW_HEAD_COLOR = (239, 103, 74)
-SELECTED_COLOR = (255, 209, 75)
-FEEDBACK_COLOR = (225, 87, 92)
-SUCCESS_COLOR = (68, 166, 116)
-BLOCKED_COLOR = (224, 79, 94)
-BUTTON_COLOR = (92, 174, 225)
+ARROW_COLOR = (105, 83, 217)
+ARROW_HEAD_COLOR = (105, 83, 217)
+SELECTED_COLOR = (255, 202, 92)
+FEEDBACK_COLOR = (238, 103, 128)
+SUCCESS_COLOR = (53, 184, 142)
+BLOCKED_COLOR = (232, 79, 105)
+BUTTON_COLOR = (105, 83, 217)
 BUTTON_TEXT_COLOR = (255, 255, 255)
-BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
+BUTTON_RECT = pygame.Rect(270, 815, 180, 48)
 START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
+DIRECTION_COLORS = {
+    "up": (89, 126, 247),
+    "down": (239, 113, 116),
+    "left": (67, 187, 154),
+    "right": (247, 166, 72),
+}
 
 # 每个关卡由若干箭头组成，row 和 col 表示箭头所在的棋盘格。
 LEVELS = [
@@ -69,43 +75,26 @@ ARROWS = [arrow.copy() for arrow in LEVELS[0]]
 
 
 def draw_board(screen: pygame.Surface) -> None:
-    """绘制空的 6×6 游戏棋盘。"""
+    """绘制带悬浮层次的 6×6 游戏棋盘。"""
     board_width = BOARD_SIZE * CELL_SIZE
     board_rect = pygame.Rect(BOARD_LEFT, BOARD_TOP, board_width, board_width)
-    shadow_rect = board_rect.move(0, 7)
-    pygame.draw.rect(screen, SHADOW_COLOR, shadow_rect, border_radius=14)
-    pygame.draw.rect(screen, BOARD_COLOR, board_rect, border_radius=14)
+    frame_rect = board_rect.inflate(22, 22)
+    pygame.draw.rect(screen, (32, 25, 70), frame_rect.move(0, 8), border_radius=28)
+    pygame.draw.rect(screen, (224, 218, 246), frame_rect, border_radius=28)
+    pygame.draw.rect(screen, (184, 171, 226), frame_rect, width=2, border_radius=28)
 
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
-            if (row + col) % 2 == 0:
-                cell_rect = pygame.Rect(
-                    BOARD_LEFT + col * CELL_SIZE + 2,
-                    BOARD_TOP + row * CELL_SIZE + 2,
-                    CELL_SIZE - 4,
-                    CELL_SIZE - 4,
-                )
-                pygame.draw.rect(screen, (255, 248, 224), cell_rect, border_radius=5)
-
-    for row in range(BOARD_SIZE + 1):
-        y = BOARD_TOP + row * CELL_SIZE
-        pygame.draw.line(
-            screen,
-            GRID_COLOR,
-            (BOARD_LEFT, y),
-            (BOARD_LEFT + board_width, y),
-            width=2,
-        )
-
-    for col in range(BOARD_SIZE + 1):
-        x = BOARD_LEFT + col * CELL_SIZE
-        pygame.draw.line(
-            screen,
-            GRID_COLOR,
-            (x, BOARD_TOP),
-            (x, BOARD_TOP + board_width),
-            width=2,
-        )
+            cell_rect = pygame.Rect(
+                BOARD_LEFT + col * CELL_SIZE + 4,
+                BOARD_TOP + row * CELL_SIZE + 4,
+                CELL_SIZE - 8,
+                CELL_SIZE - 8,
+            )
+            cell_color = (252, 250, 255) if (row + col) % 2 == 0 else (242, 238, 252)
+            pygame.draw.rect(screen, (177, 166, 214), cell_rect.move(0, 3), border_radius=15)
+            pygame.draw.rect(screen, cell_color, cell_rect, border_radius=15)
+            pygame.draw.rect(screen, (255, 255, 255), cell_rect, width=2, border_radius=15)
 
 
 def load_font(size: int) -> pygame.font.Font:
@@ -118,22 +107,25 @@ def load_font(size: int) -> pygame.font.Font:
 
 
 def draw_cartoon_background(screen: pygame.Surface) -> None:
-    """绘制统一的卡通天空背景和装饰。"""
-    screen.fill(BACKGROUND_COLOR)
+    """绘制深紫渐变与柔和光斑。"""
+    top = (48, 39, 96)
+    bottom = (105, 75, 157)
+    for y in range(WINDOW_HEIGHT):
+        ratio = y / WINDOW_HEIGHT
+        color = tuple(int(a + (b - a) * ratio) for a, b in zip(top, bottom))
+        pygame.draw.line(screen, color, (0, y), (WINDOW_WIDTH, y))
 
-    # 太阳
-    pygame.draw.circle(screen, (255, 220, 94), (635, 70), 34)
-    pygame.draw.circle(screen, (255, 235, 132), (635, 70), 25)
+    glow = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+    for position, radius, color in (
+        ((90, 110), 105, (108, 190, 255, 32)),
+        ((655, 165), 125, (255, 135, 195, 28)),
+        ((580, 720), 145, (126, 255, 211, 20)),
+    ):
+        pygame.draw.circle(glow, color, position, radius)
+    screen.blit(glow, (0, 0))
 
-    # 云朵
-    for x, y in ((78, 82), (535, 180), (120, 720)):
-        pygame.draw.circle(screen, (255, 255, 255), (x, y), 22)
-        pygame.draw.circle(screen, (255, 255, 255), (x + 25, y - 10), 30)
-        pygame.draw.circle(screen, (255, 255, 255), (x + 58, y), 22)
-        pygame.draw.rect(screen, (255, 255, 255), (x, y, 58, 22), border_radius=10)
-
-    # 底部草地
-    pygame.draw.rect(screen, (139, 211, 137), (0, 805, WINDOW_WIDTH, 15))
+    for x, y, radius in ((65, 220, 3), (665, 315, 4), (54, 650, 4), (650, 610, 3)):
+        pygame.draw.circle(screen, (226, 218, 255), (x, y), radius)
 
 
 def draw_arrow(
@@ -171,13 +163,19 @@ def draw_arrow(
         return center_x + x, center_y + y
 
     points = [transform(point) for point in base_points]
-    arrow_color = color or ARROW_COLOR
-    pygame.draw.polygon(screen, (111, 75, 84), points)
-    inner_points = [
-        transform((int(x * 0.9), int(y * 0.9))) for x, y in base_points
-    ]
-    pygame.draw.polygon(screen, arrow_color, inner_points)
-    pygame.draw.lines(screen, (255, 224, 158), False, inner_points[:3], width=3)
+    arrow_color = color or DIRECTION_COLORS[direction]
+
+    # 圆形徽章底座，让箭头像独立的游戏棋子。
+    pygame.draw.circle(screen, (122, 110, 154), (center_x, center_y + 4), 35)
+    pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), 35)
+    pygame.draw.circle(screen, (232, 227, 247), (center_x, center_y), 35, width=2)
+    pygame.draw.circle(screen, (255, 255, 255), (center_x - 10, center_y - 11), 11)
+
+    # 箭头使用偏移阴影、主色和高光三层，增强立体感。
+    shadow_points = [(x + 2, y + 4) for x, y in points]
+    pygame.draw.polygon(screen, (72, 61, 99), shadow_points)
+    pygame.draw.polygon(screen, arrow_color, points)
+    pygame.draw.lines(screen, (255, 255, 255), False, points[:3], width=3)
 
 
 def draw_arrows(
@@ -191,17 +189,29 @@ def draw_arrows(
         offset = (0, 0)
         color = None
         if index == shake_index and shake_frame > 0:
-            offset = (int(math.sin(shake_frame * 1.8) * 8), 0)
+            # 沿箭头方向先前移再返回，同时在垂直方向轻微晃动。
+            progress = (18 - shake_frame) / 18
+            forward_distance = int(math.sin(math.pi * progress) * 15)
+            jitter = int(math.sin(shake_frame * 2.2) * 4)
+            direction = arrow["direction"]
+            if direction == "up":
+                offset = (jitter, -forward_distance)
+            elif direction == "down":
+                offset = (jitter, forward_distance)
+            elif direction == "left":
+                offset = (-forward_distance, jitter)
+            else:
+                offset = (forward_distance, jitter)
             color = BLOCKED_COLOR
         draw_arrow(screen, arrow, offset, color)
         if index == selected_index:
             rect = pygame.Rect(
-                BOARD_LEFT + arrow["col"] * CELL_SIZE + 6,
-                BOARD_TOP + arrow["row"] * CELL_SIZE + 6,
-                CELL_SIZE - 12,
-                CELL_SIZE - 12,
+                BOARD_LEFT + arrow["col"] * CELL_SIZE + 9,
+                BOARD_TOP + arrow["row"] * CELL_SIZE + 9,
+                CELL_SIZE - 18,
+                CELL_SIZE - 18,
             )
-            pygame.draw.rect(screen, SELECTED_COLOR, rect, width=4, border_radius=8)
+            pygame.draw.rect(screen, SELECTED_COLOR, rect, width=4, border_radius=18)
 
 
 def get_arrow_at_position(position: tuple[int, int]) -> int | None:
@@ -241,6 +251,47 @@ def draw_button(
     button_text = font.render(text, True, BUTTON_TEXT_COLOR)
     text_rect = button_text.get_rect(center=rect.center)
     screen.blit(button_text, text_rect)
+
+
+def draw_result_panel(
+    screen: pygame.Surface,
+    font: pygame.font.Font,
+    title: str,
+    title_color: tuple[int, int, int],
+    button_text: str,
+) -> None:
+    """在棋盘下方绘制独立的通关或失败结果卡片。"""
+    panel = pygame.Rect(145, 710, 430, 175)
+    pygame.draw.rect(screen, (31, 24, 67), panel.move(0, 7), border_radius=22)
+    pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=22)
+    pygame.draw.rect(screen, (218, 208, 242), panel, width=2, border_radius=22)
+
+    badge = pygame.Rect(245, 728, 230, 54)
+    badge_color = (*title_color, 35)
+    badge_surface = pygame.Surface(badge.size, pygame.SRCALPHA)
+    pygame.draw.rect(badge_surface, badge_color, badge_surface.get_rect(), border_radius=27)
+    screen.blit(badge_surface, badge.topleft)
+
+    result = font.render(title, True, title_color)
+    result_rect = result.get_rect(center=badge.center)
+    screen.blit(result, result_rect)
+    draw_button(screen, font, button_text, BUTTON_RECT, pygame.mouse.get_pos())
+
+
+def draw_feedback_panel(
+    screen: pygame.Surface,
+    font: pygame.font.Font,
+    text: str,
+) -> None:
+    """绘制游戏进行中的反馈提示框。"""
+    panel = pygame.Rect(150, 725, 420, 52)
+    pygame.draw.rect(screen, (31, 24, 67), panel.move(0, 5), border_radius=18)
+    pygame.draw.rect(screen, (249, 247, 255), panel, border_radius=18)
+    pygame.draw.rect(screen, (218, 208, 242), panel, width=2, border_radius=18)
+
+    feedback = font.render(text, True, FEEDBACK_COLOR)
+    feedback_rect = feedback.get_rect(center=panel.center)
+    screen.blit(feedback, feedback_rect)
 
 
 def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
@@ -423,21 +474,13 @@ def main() -> None:
             }[direction]
             draw_arrow(screen, flying_arrow, offset)
         if game_state == "playing":
-            feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
-            feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
-            screen.blit(feedback_text, feedback_rect)
+            draw_feedback_panel(screen, font, feedback)
 
         if game_state == "success":
-            result = font.render("恭喜通关！", True, SUCCESS_COLOR)
-            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 715))
-            screen.blit(result, result_rect)
             button_text = "下一关" if current_level < len(LEVELS) - 1 else "重新开始"
-            draw_button(screen, font, button_text, BUTTON_RECT, pygame.mouse.get_pos())
+            draw_result_panel(screen, font, "恭喜通关！", SUCCESS_COLOR, button_text)
         elif game_state == "failed":
-            result = font.render("挑战失败", True, FEEDBACK_COLOR)
-            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 715))
-            screen.blit(result, result_rect)
-            draw_button(screen, font, "重新开始", BUTTON_RECT, pygame.mouse.get_pos())
+            draw_result_panel(screen, font, "挑战失败", FEEDBACK_COLOR, "重新开始")
 
         pygame.display.flip()
         clock.tick(60)
