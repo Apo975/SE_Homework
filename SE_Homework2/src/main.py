@@ -20,6 +20,7 @@ TEXT_COLOR = (35, 40, 50)
 FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
 ARROW_COLOR = (70, 125, 220)
 ARROW_HEAD_COLOR = (45, 90, 180)
+SELECTED_COLOR = (245, 180, 45)
 
 # 第一关的固定箭头数据。row 和 col 表示箭头所在的棋盘格。
 ARROWS = [
@@ -112,10 +113,35 @@ def draw_arrow(screen: pygame.Surface, arrow: dict) -> None:
     pygame.draw.polygon(screen, ARROW_HEAD_COLOR, head)
 
 
-def draw_arrows(screen: pygame.Surface) -> None:
+def draw_arrows(screen: pygame.Surface, selected_index: int | None = None) -> None:
     """绘制当前关卡中的全部箭头。"""
-    for arrow in ARROWS:
+    for index, arrow in enumerate(ARROWS):
         draw_arrow(screen, arrow)
+        if index == selected_index:
+            rect = pygame.Rect(
+                BOARD_LEFT + arrow["col"] * CELL_SIZE + 6,
+                BOARD_TOP + arrow["row"] * CELL_SIZE + 6,
+                CELL_SIZE - 12,
+                CELL_SIZE - 12,
+            )
+            pygame.draw.rect(screen, SELECTED_COLOR, rect, width=4, border_radius=8)
+
+
+def get_arrow_at_position(position: tuple[int, int]) -> int | None:
+    """根据鼠标位置返回被点击的箭头下标。"""
+    mouse_x, mouse_y = position
+    if not (
+        BOARD_LEFT <= mouse_x < BOARD_LEFT + BOARD_SIZE * CELL_SIZE
+        and BOARD_TOP <= mouse_y < BOARD_TOP + BOARD_SIZE * CELL_SIZE
+    ):
+        return None
+
+    col = (mouse_x - BOARD_LEFT) // CELL_SIZE
+    row = (mouse_y - BOARD_TOP) // CELL_SIZE
+    for index, arrow in enumerate(ARROWS):
+        if arrow["row"] == row and arrow["col"] == col:
+            return index
+    return None
 
 
 def main() -> None:
@@ -124,19 +150,22 @@ def main() -> None:
     pygame.display.set_caption("一箭又一箭")
     clock = pygame.time.Clock()
     font = load_font(32)
+    selected_index = None
 
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                selected_index = get_arrow_at_position(event.pos)
 
         screen.fill(BACKGROUND_COLOR)
         title = font.render("一箭又一箭", True, TEXT_COLOR)
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
         screen.blit(title, title_rect)
         draw_board(screen)
-        draw_arrows(screen)
+        draw_arrows(screen, selected_index)
 
         pygame.display.flip()
         clock.tick(60)
