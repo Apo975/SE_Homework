@@ -1,6 +1,7 @@
 """一箭又一箭：第一阶段的窗口和基础棋盘。"""
 
 import sys
+from pathlib import Path
 
 import pygame
 
@@ -16,6 +17,7 @@ BACKGROUND_COLOR = (245, 247, 250)
 BOARD_COLOR = (255, 255, 255)
 GRID_COLOR = (205, 211, 220)
 TEXT_COLOR = (35, 40, 50)
+FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
 
 
 def draw_board(screen: pygame.Surface) -> None:
@@ -45,12 +47,19 @@ def draw_board(screen: pygame.Surface) -> None:
         )
 
 
+def load_font(size: int) -> pygame.font.Font:
+    """直接加载 Windows 中文字体，避免 Pygame 自动扫描字体异常。"""
+    if FONT_PATH.exists():
+        return pygame.font.Font(str(FONT_PATH), size)
+    return pygame.font.Font(None, size)
+
+
 def main() -> None:
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("一箭又一箭")
     clock = pygame.time.Clock()
-    font = pygame.font.SysFont("Microsoft YaHei", 32)
+    font = load_font(32)
 
     running = True
     while running:
