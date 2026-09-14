@@ -421,6 +421,8 @@ def main() -> None:
                             current_level += 1
                         elif game_state == "success":
                             current_level = 0
+                            game_state = "start"
+                            continue
                         reset_game(current_level)
                         selected_index = None
                         mistakes_left = 3
@@ -477,7 +479,7 @@ def main() -> None:
             draw_feedback_panel(screen, font, feedback)
 
         if game_state == "success":
-            button_text = "下一关" if current_level < len(LEVELS) - 1 else "重新开始"
+            button_text = "下一关" if current_level < len(LEVELS) - 1 else "返回开始"
             draw_result_panel(screen, font, "恭喜通关！", SUCCESS_COLOR, button_text)
         elif game_state == "failed":
             draw_result_panel(screen, font, "挑战失败", FEEDBACK_COLOR, "重新开始")
