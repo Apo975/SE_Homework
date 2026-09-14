@@ -21,13 +21,16 @@ FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
 ARROW_COLOR = (70, 125, 220)
 ARROW_HEAD_COLOR = (45, 90, 180)
 SELECTED_COLOR = (245, 180, 45)
+FEEDBACK_COLOR = (210, 90, 70)
 
 # 第一关的固定箭头数据。row 和 col 表示箭头所在的棋盘格。
 ARROWS = [
-    {"row": 0, "col": 0, "direction": "right"},
-    {"row": 1, "col": 4, "direction": "down"},
-    {"row": 3, "col": 2, "direction": "left"},
+    {"row": 2, "col": 0, "direction": "right"},
+    {"row": 2, "col": 3, "direction": "up"},
+    {"row": 0, "col": 4, "direction": "down"},
+    {"row": 4, "col": 4, "direction": "left"},
     {"row": 5, "col": 5, "direction": "up"},
+    {"row": 0, "col": 0, "direction": "right"},
 ]
 
 
@@ -144,6 +147,30 @@ def get_arrow_at_position(position: tuple[int, int]) -> int | None:
     return None
 
 
+def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
+    """判断箭头前进方向至棋盘边界之间是否存在其他箭头。"""
+    row = arrow["row"]
+    col = arrow["col"]
+    direction = arrow["direction"]
+
+    for other in arrows:
+        if other is arrow:
+            continue
+
+        other_row = other["row"]
+        other_col = other["col"]
+        if direction == "up" and other_col == col and other_row < row:
+            return True
+        if direction == "down" and other_col == col and other_row > row:
+            return True
+        if direction == "left" and other_row == row and other_col < col:
+            return True
+        if direction == "right" and other_row == row and other_col > col:
+            return True
+
+    return False
+
+
 def main() -> None:
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -151,6 +178,7 @@ def main() -> None:
     clock = pygame.time.Clock()
     font = load_font(32)
     selected_index = None
+    feedback = "请点击一个箭头"
 
     running = True
     while running:
@@ -159,6 +187,12 @@ def main() -> None:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 selected_index = get_arrow_at_position(event.pos)
+                if selected_index is None:
+                    feedback = "这里没有箭头"
+                elif is_blocked(ARROWS[selected_index], ARROWS):
+                    feedback = "前方有阻挡"
+                else:
+                    feedback = "前方无阻挡"
 
         screen.fill(BACKGROUND_COLOR)
         title = font.render("一箭又一箭", True, TEXT_COLOR)
@@ -166,6 +200,9 @@ def main() -> None:
         screen.blit(title, title_rect)
         draw_board(screen)
         draw_arrows(screen, selected_index)
+        feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
+        feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
+        screen.blit(feedback_text, feedback_rect)
 
         pygame.display.flip()
         clock.tick(60)
