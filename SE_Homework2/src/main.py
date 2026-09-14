@@ -18,6 +18,10 @@ BACKGROUND_COLOR = (245, 247, 250)
 BOARD_COLOR = (255, 255, 255)
 GRID_COLOR = (205, 211, 220)
 TEXT_COLOR = (35, 40, 50)
+SUBTLE_TEXT_COLOR = (105, 115, 130)
+PANEL_COLOR = (255, 255, 255)
+SHADOW_COLOR = (220, 225, 233)
+HOVER_COLOR = (90, 145, 235)
 FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
 ARROW_COLOR = (70, 125, 220)
 ARROW_HEAD_COLOR = (45, 90, 180)
@@ -67,7 +71,20 @@ def draw_board(screen: pygame.Surface) -> None:
     """绘制空的 6×6 游戏棋盘。"""
     board_width = BOARD_SIZE * CELL_SIZE
     board_rect = pygame.Rect(BOARD_LEFT, BOARD_TOP, board_width, board_width)
-    pygame.draw.rect(screen, BOARD_COLOR, board_rect, border_radius=8)
+    shadow_rect = board_rect.move(0, 7)
+    pygame.draw.rect(screen, SHADOW_COLOR, shadow_rect, border_radius=14)
+    pygame.draw.rect(screen, BOARD_COLOR, board_rect, border_radius=14)
+
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            if (row + col) % 2 == 0:
+                cell_rect = pygame.Rect(
+                    BOARD_LEFT + col * CELL_SIZE + 2,
+                    BOARD_TOP + row * CELL_SIZE + 2,
+                    CELL_SIZE - 4,
+                    CELL_SIZE - 4,
+                )
+                pygame.draw.rect(screen, (250, 252, 255), cell_rect)
 
     for row in range(BOARD_SIZE + 1):
         y = BOARD_TOP + row * CELL_SIZE
@@ -199,28 +216,33 @@ def reset_game(level_index: int) -> None:
     ARROWS.extend(arrow.copy() for arrow in LEVELS[level_index])
 
 
-def draw_button(screen: pygame.Surface, font: pygame.font.Font, text: str) -> None:
+def draw_button(
+    screen: pygame.Surface,
+    font: pygame.font.Font,
+    text: str,
+    rect: pygame.Rect = BUTTON_RECT,
+    mouse_pos: tuple[int, int] | None = None,
+) -> None:
     """绘制重新开始按钮。"""
-    pygame.draw.rect(screen, BUTTON_COLOR, BUTTON_RECT, border_radius=8)
+    color = HOVER_COLOR if mouse_pos and rect.collidepoint(mouse_pos) else BUTTON_COLOR
+    pygame.draw.rect(screen, SHADOW_COLOR, rect.move(0, 4), border_radius=10)
+    pygame.draw.rect(screen, color, rect, border_radius=10)
     button_text = font.render(text, True, BUTTON_TEXT_COLOR)
-    text_rect = button_text.get_rect(center=BUTTON_RECT.center)
+    text_rect = button_text.get_rect(center=rect.center)
     screen.blit(button_text, text_rect)
 
 
 def draw_start_screen(screen: pygame.Surface, font: pygame.font.Font) -> None:
     """绘制游戏开始界面。"""
     title = font.render("一箭又一箭", True, TEXT_COLOR)
-    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 180))
+    title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 170))
     screen.blit(title, title_rect)
 
-    instruction = font.render("按照合适的顺序点击箭头，清空棋盘", True, TEXT_COLOR)
+    instruction = font.render("按照合适的顺序点击箭头，清空棋盘", True, SUBTLE_TEXT_COLOR)
     instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 300))
     screen.blit(instruction, instruction_rect)
 
-    pygame.draw.rect(screen, BUTTON_COLOR, START_BUTTON_RECT, border_radius=8)
-    button_text = font.render("开始游戏", True, BUTTON_TEXT_COLOR)
-    button_text_rect = button_text.get_rect(center=START_BUTTON_RECT.center)
-    screen.blit(button_text, button_text_rect)
+    draw_button(screen, font, "开始游戏", START_BUTTON_RECT, pygame.mouse.get_pos())
 
 
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
@@ -369,12 +391,12 @@ def main() -> None:
             result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
             screen.blit(result, result_rect)
             button_text = "下一关" if current_level < len(LEVELS) - 1 else "重新开始"
-            draw_button(screen, font, button_text)
+            draw_button(screen, font, button_text, BUTTON_RECT, pygame.mouse.get_pos())
         elif game_state == "failed":
             result = font.render("挑战失败", True, FEEDBACK_COLOR)
             result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
             screen.blit(result, result_rect)
-            draw_button(screen, font, "重新开始")
+            draw_button(screen, font, "重新开始", BUTTON_RECT, pygame.mouse.get_pos())
 
         pygame.display.flip()
         clock.tick(60)
