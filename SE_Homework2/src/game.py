@@ -27,9 +27,12 @@ BLOCKED_COLOR = (232, 79, 105)
 BUTTON_COLOR = (105, 83, 217)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 815, 180, 48)
+FINAL_BUTTON_RECT = pygame.Rect(270, 510, 180, 52)
 PLAY_RESTART_BUTTON_RECT = pygame.Rect(585, 725, 115, 52)
 PAUSE_BUTTON_RECT = pygame.Rect(585, 785, 115, 52)
 START_BUTTON_RECT = pygame.Rect(270, 505, 180, 55)
+START_EXIT_BUTTON_RECT = pygame.Rect(270, 575, 180, 48)
+PAUSE_EXIT_BUTTON_RECT = pygame.Rect(285, 485, 150, 46)
 DIRECTION_COLORS = {
     "up": (89, 126, 247),
     "down": (239, 113, 116),
@@ -84,6 +87,7 @@ class ArrowGame:
         self.flying_progress = 0.0
         self.shake_index: int | None = None
         self.shake_frame = 0
+        self.should_exit = False
         self.font: pygame.font.Font | None = None
         self.status_font: pygame.font.Font | None = None
         self.reset_level(0)
@@ -161,10 +165,14 @@ class ArrowGame:
             if START_BUTTON_RECT.collidepoint(position):
                 self.reset_level(0)
                 self.game_state = "playing"
+            elif START_EXIT_BUTTON_RECT.collidepoint(position):
+                self.should_exit = True
             return
 
         if self.game_state != "playing":
-            if BUTTON_RECT.collidepoint(position):
+            is_final_success = self.game_state == "success" and self.current_level == len(LEVELS) - 1
+            action_rect = FINAL_BUTTON_RECT if is_final_success else BUTTON_RECT
+            if action_rect.collidepoint(position):
                 if self.game_state == "success" and self.current_level < len(LEVELS) - 1:
                     self.reset_level(self.current_level + 1)
                     self.game_state = "playing"
@@ -185,6 +193,10 @@ class ArrowGame:
             self.feedback = "已重新开始当前关卡"
             return
         if self.is_paused:
+            if PAUSE_EXIT_BUTTON_RECT.collidepoint(position):
+                self.current_level = 0
+                self.game_state = "start"
+                self.is_paused = False
             return
 
         self.selected_index = self.get_arrow_at_position(position)
@@ -331,6 +343,7 @@ class ArrowGame:
             instruction = self.font.render(line, True, SUBTLE_TEXT_COLOR)
             screen.blit(instruction, instruction.get_rect(center=(WINDOW_WIDTH // 2, 300 + index * 42)))
         self.draw_button(screen, self.font, "开始游戏", START_BUTTON_RECT, mouse_pos)
+        self.draw_button(screen, self.status_font or self.font, "退出游戏", START_EXIT_BUTTON_RECT, mouse_pos)
 
     def draw_status_panel(self, screen: pygame.Surface) -> None:
         assert self.status_font is not None
@@ -364,29 +377,44 @@ class ArrowGame:
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((25, 19, 55, 135))
         screen.blit(overlay, (0, 0))
-        card = pygame.Rect(195, 350, 330, 130)
+        card = pygame.Rect(195, 330, 330, 220)
         pygame.draw.rect(screen, (31, 24, 67), card.move(0, 7), border_radius=22)
         pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=22)
         title = self.font.render("游戏已暂停", True, TEXT_COLOR)
-        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 398)))
+        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 380)))
         hint = self.font.render("点击继续按钮恢复游戏", True, SUBTLE_TEXT_COLOR)
-        screen.blit(hint, hint.get_rect(center=(WINDOW_WIDTH // 2, 442)))
+        screen.blit(hint, hint.get_rect(center=(WINDOW_WIDTH // 2, 425)))
 
     def draw_result_panel(
-        self, screen: pygame.Surface, title: str, title_color: tuple[int, int, int], button_text: str, mouse_pos: tuple[int, int]
+        self,
+        screen: pygame.Surface,
+        title: str,
+        title_color: tuple[int, int, int],
+        button_text: str,
+        mouse_pos: tuple[int, int],
+        is_final: bool = False,
     ) -> None:
         assert self.font is not None
-        panel = pygame.Rect(145, 710, 430, 175)
+        if is_final:
+            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((25, 19, 55, 150))
+            screen.blit(overlay, (0, 0))
+            panel = pygame.Rect(110, 255, 500, 350)
+            badge = pygame.Rect(245, 315, 230, 62)
+            action_rect = FINAL_BUTTON_RECT
+        else:
+            panel = pygame.Rect(145, 710, 430, 175)
+            badge = pygame.Rect(245, 728, 230, 54)
+            action_rect = BUTTON_RECT
         pygame.draw.rect(screen, (31, 24, 67), panel.move(0, 7), border_radius=22)
         pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=22)
         pygame.draw.rect(screen, (218, 208, 242), panel, width=2, border_radius=22)
-        badge = pygame.Rect(245, 728, 230, 54)
         badge_surface = pygame.Surface(badge.size, pygame.SRCALPHA)
         pygame.draw.rect(badge_surface, (*title_color, 35), badge_surface.get_rect(), border_radius=27)
         screen.blit(badge_surface, badge.topleft)
         result = self.font.render(title, True, title_color)
         screen.blit(result, result.get_rect(center=badge.center))
-        self.draw_button(screen, self.font, button_text, BUTTON_RECT, mouse_pos)
+        self.draw_button(screen, self.font, button_text, action_rect, mouse_pos)
 
     def draw(self, screen: pygame.Surface) -> None:
         self.draw_background(screen)
@@ -411,9 +439,18 @@ class ArrowGame:
             assert self.status_font is not None
             self.draw_button(screen, self.status_font, "重开", PLAY_RESTART_BUTTON_RECT, mouse_pos)
             self.draw_button(screen, self.status_font, "继续" if self.is_paused else "暂停", PAUSE_BUTTON_RECT, mouse_pos)
+            if self.is_paused:
+                self.draw_button(screen, self.status_font, "退出至菜单", PAUSE_EXIT_BUTTON_RECT, mouse_pos)
         elif self.game_state == "success":
             button_text = "下一关" if self.current_level < len(LEVELS) - 1 else "返回开始"
-            self.draw_result_panel(screen, "恭喜通关！", SUCCESS_COLOR, button_text, mouse_pos)
+            self.draw_result_panel(
+                screen,
+                "恭喜通关！",
+                SUCCESS_COLOR,
+                button_text,
+                mouse_pos,
+                is_final=self.current_level == len(LEVELS) - 1,
+            )
         else:
             self.draw_result_panel(screen, "挑战失败", FEEDBACK_COLOR, "重新开始", mouse_pos)
 
@@ -433,6 +470,8 @@ class ArrowGame:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     self.handle_click(event.pos)
+                    if self.should_exit:
+                        running = False
             self.draw(screen)
             pygame.display.flip()
         pygame.quit()
