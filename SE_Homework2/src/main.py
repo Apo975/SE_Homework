@@ -14,22 +14,22 @@ CELL_SIZE = 90
 BOARD_LEFT = (WINDOW_WIDTH - BOARD_SIZE * CELL_SIZE) // 2
 BOARD_TOP = 150
 
-BACKGROUND_COLOR = (245, 247, 250)
-BOARD_COLOR = (255, 255, 255)
-GRID_COLOR = (205, 211, 220)
-TEXT_COLOR = (35, 40, 50)
-SUBTLE_TEXT_COLOR = (105, 115, 130)
-PANEL_COLOR = (255, 255, 255)
-SHADOW_COLOR = (220, 225, 233)
-HOVER_COLOR = (90, 145, 235)
+BACKGROUND_COLOR = (184, 232, 255)
+BOARD_COLOR = (255, 253, 241)
+GRID_COLOR = (224, 194, 139)
+TEXT_COLOR = (75, 63, 82)
+SUBTLE_TEXT_COLOR = (116, 103, 120)
+PANEL_COLOR = (255, 249, 224)
+SHADOW_COLOR = (118, 184, 205)
+HOVER_COLOR = (255, 166, 86)
 FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
-ARROW_COLOR = (70, 125, 220)
-ARROW_HEAD_COLOR = (45, 90, 180)
-SELECTED_COLOR = (245, 180, 45)
-FEEDBACK_COLOR = (210, 90, 70)
-SUCCESS_COLOR = (45, 155, 90)
-BLOCKED_COLOR = (220, 75, 75)
-BUTTON_COLOR = (70, 125, 220)
+ARROW_COLOR = (255, 157, 73)
+ARROW_HEAD_COLOR = (239, 103, 74)
+SELECTED_COLOR = (255, 209, 75)
+FEEDBACK_COLOR = (225, 87, 92)
+SUCCESS_COLOR = (68, 166, 116)
+BLOCKED_COLOR = (224, 79, 94)
+BUTTON_COLOR = (92, 174, 225)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
 START_BUTTON_RECT = pygame.Rect(270, 560, 180, 55)
@@ -84,7 +84,7 @@ def draw_board(screen: pygame.Surface) -> None:
                     CELL_SIZE - 4,
                     CELL_SIZE - 4,
                 )
-                pygame.draw.rect(screen, (250, 252, 255), cell_rect)
+                pygame.draw.rect(screen, (255, 248, 224), cell_rect, border_radius=5)
 
     for row in range(BOARD_SIZE + 1):
         y = BOARD_TOP + row * CELL_SIZE
@@ -112,6 +112,25 @@ def load_font(size: int) -> pygame.font.Font:
     if FONT_PATH.exists():
         return pygame.font.Font(str(FONT_PATH), size)
     return pygame.font.Font(None, size)
+
+
+def draw_cartoon_background(screen: pygame.Surface) -> None:
+    """绘制统一的卡通天空背景和装饰。"""
+    screen.fill(BACKGROUND_COLOR)
+
+    # 太阳
+    pygame.draw.circle(screen, (255, 220, 94), (635, 70), 34)
+    pygame.draw.circle(screen, (255, 235, 132), (635, 70), 25)
+
+    # 云朵
+    for x, y in ((78, 82), (535, 180), (120, 720)):
+        pygame.draw.circle(screen, (255, 255, 255), (x, y), 22)
+        pygame.draw.circle(screen, (255, 255, 255), (x + 25, y - 10), 30)
+        pygame.draw.circle(screen, (255, 255, 255), (x + 58, y), 22)
+        pygame.draw.rect(screen, (255, 255, 255), (x, y, 58, 22), border_radius=10)
+
+    # 底部草地
+    pygame.draw.rect(screen, (139, 211, 137), (0, 805, WINDOW_WIDTH, 15))
 
 
 def draw_arrow(
@@ -382,7 +401,7 @@ def main() -> None:
                     selected_index = None
                     feedback = "箭头飞出棋盘"
 
-        screen.fill(BACKGROUND_COLOR)
+        draw_cartoon_background(screen)
         if game_state == "start":
             draw_start_screen(screen, font)
             pygame.display.flip()
