@@ -18,6 +18,16 @@ BOARD_COLOR = (255, 255, 255)
 GRID_COLOR = (205, 211, 220)
 TEXT_COLOR = (35, 40, 50)
 FONT_PATH = Path(r"C:\Windows\Fonts\msyh.ttc")
+ARROW_COLOR = (70, 125, 220)
+ARROW_HEAD_COLOR = (45, 90, 180)
+
+# 第一关的固定箭头数据。row 和 col 表示箭头所在的棋盘格。
+ARROWS = [
+    {"row": 0, "col": 0, "direction": "right"},
+    {"row": 1, "col": 4, "direction": "down"},
+    {"row": 3, "col": 2, "direction": "left"},
+    {"row": 5, "col": 5, "direction": "up"},
+]
 
 
 def draw_board(screen: pygame.Surface) -> None:
@@ -54,6 +64,60 @@ def load_font(size: int) -> pygame.font.Font:
     return pygame.font.Font(None, size)
 
 
+def draw_arrow(screen: pygame.Surface, arrow: dict) -> None:
+    """在指定的棋盘格中绘制一个箭头。"""
+    row = arrow["row"]
+    col = arrow["col"]
+    direction = arrow["direction"]
+
+    center_x = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE // 2
+    center_y = BOARD_TOP + row * CELL_SIZE + CELL_SIZE // 2
+    half_length = 28
+    head_width = 22
+
+    if direction == "up":
+        shaft_start = (center_x, center_y + half_length)
+        shaft_end = (center_x, center_y - half_length)
+        head = [
+            (center_x, center_y - half_length - 12),
+            (center_x - head_width, center_y - half_length + 12),
+            (center_x + head_width, center_y - half_length + 12),
+        ]
+    elif direction == "down":
+        shaft_start = (center_x, center_y - half_length)
+        shaft_end = (center_x, center_y + half_length)
+        head = [
+            (center_x, center_y + half_length + 12),
+            (center_x - head_width, center_y + half_length - 12),
+            (center_x + head_width, center_y + half_length - 12),
+        ]
+    elif direction == "left":
+        shaft_start = (center_x + half_length, center_y)
+        shaft_end = (center_x - half_length, center_y)
+        head = [
+            (center_x - half_length - 12, center_y),
+            (center_x - half_length + 12, center_y - head_width),
+            (center_x - half_length + 12, center_y + head_width),
+        ]
+    else:  # right
+        shaft_start = (center_x - half_length, center_y)
+        shaft_end = (center_x + half_length, center_y)
+        head = [
+            (center_x + half_length + 12, center_y),
+            (center_x + half_length - 12, center_y - head_width),
+            (center_x + half_length - 12, center_y + head_width),
+        ]
+
+    pygame.draw.line(screen, ARROW_COLOR, shaft_start, shaft_end, width=12)
+    pygame.draw.polygon(screen, ARROW_HEAD_COLOR, head)
+
+
+def draw_arrows(screen: pygame.Surface) -> None:
+    """绘制当前关卡中的全部箭头。"""
+    for arrow in ARROWS:
+        draw_arrow(screen, arrow)
+
+
 def main() -> None:
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -72,6 +136,7 @@ def main() -> None:
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 70))
         screen.blit(title, title_rect)
         draw_board(screen)
+        draw_arrows(screen)
 
         pygame.display.flip()
         clock.tick(60)
