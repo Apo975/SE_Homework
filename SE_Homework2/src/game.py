@@ -20,6 +20,7 @@ PANEL_COLOR = (249, 247, 255)
 SHADOW_COLOR = (31, 24, 67)
 HOVER_COLOR = (128, 103, 235)
 FONT_PATH = Path(r"C:\Windows\Fonts\simhei.ttf")
+TITLE_FONT_PATH = Path(r"C:\Windows\Fonts\Dengb.ttf")
 SELECTED_COLOR = (255, 202, 92)
 FEEDBACK_COLOR = (238, 103, 128)
 SUCCESS_COLOR = (53, 184, 142)
@@ -90,12 +91,14 @@ class ArrowGame:
         self.should_exit = False
         self.font: pygame.font.Font | None = None
         self.status_font: pygame.font.Font | None = None
+        self.title_font: pygame.font.Font | None = None
+        self.small_font: pygame.font.Font | None = None
         self.reset_level(0)
 
     @staticmethod
-    def load_font(size: int) -> pygame.font.Font:
-        if FONT_PATH.exists():
-            return pygame.font.Font(str(FONT_PATH), size)
+    def load_font(size: int, font_path: Path = FONT_PATH) -> pygame.font.Font:
+        if font_path.exists():
+            return pygame.font.Font(str(font_path), size)
         return pygame.font.Font(None, size)
 
     def reset_level(self, level_index: int | None = None) -> None:
@@ -333,15 +336,36 @@ class ArrowGame:
                 pygame.draw.rect(screen, SELECTED_COLOR, rect, width=4, border_radius=18)
 
     def draw_start_screen(self, screen: pygame.Surface, mouse_pos: tuple[int, int]) -> None:
-        assert self.font is not None
-        card = pygame.Rect(100, 55, 520, 530)
+        assert self.font is not None and self.title_font is not None and self.small_font is not None
+        card = pygame.Rect(100, 40, 520, 550)
         pygame.draw.rect(screen, SHADOW_COLOR, card.move(0, 8), border_radius=20)
         pygame.draw.rect(screen, PANEL_COLOR, card, border_radius=20)
-        title = self.font.render("一箭又一箭", True, TEXT_COLOR)
-        screen.blit(title, title.get_rect(center=(WINDOW_WIDTH // 2, 135)))
-        for index, line in enumerate(("按照合适的顺序点击箭头", "清空棋盘即可通关")):
-            instruction = self.font.render(line, True, SUBTLE_TEXT_COLOR)
-            screen.blit(instruction, instruction.get_rect(center=(WINDOW_WIDTH // 2, 245 + index * 40)))
+
+        eyebrow = self.small_font.render("ARROW PUZZLE", True, (105, 83, 217))
+        screen.blit(eyebrow, eyebrow.get_rect(center=(WINDOW_WIDTH // 2, 92)))
+        title_card = pygame.Rect(145, 112, 430, 78)
+        pygame.draw.rect(screen, (202, 192, 232), title_card.move(0, 5), border_radius=18)
+        pygame.draw.rect(screen, (255, 255, 255), title_card, border_radius=18)
+        pygame.draw.rect(screen, (183, 168, 226), title_card, width=2, border_radius=18)
+        pygame.draw.rect(screen, (105, 83, 217), (185, 112, 350, 5), border_radius=3)
+        title = self.title_font.render("一箭又一箭", True, TEXT_COLOR)
+        screen.blit(title, title.get_rect(center=title_card.center))
+        subtitle = self.small_font.render("观察方向，规划顺序，解开棋盘谜题", True, SUBTLE_TEXT_COLOR)
+        screen.blit(subtitle, subtitle.get_rect(center=(WINDOW_WIDTH // 2, 210)))
+
+        pygame.draw.line(screen, (222, 214, 242), (165, 240), (555, 240), width=2)
+        rules = (
+            ("01", "前方无阻挡，箭头即可飞出棋盘"),
+            ("02", "错误点击会消耗一次失误机会"),
+            ("03", "清空全部箭头即可通过当前关卡"),
+        )
+        for index, (number, text) in enumerate(rules):
+            y = 285 + index * 48
+            pygame.draw.circle(screen, (232, 227, 247), (185, y), 16)
+            number_surface = self.small_font.render(number, True, (105, 83, 217))
+            screen.blit(number_surface, number_surface.get_rect(center=(185, y)))
+            rule_surface = self.small_font.render(text, True, TEXT_COLOR)
+            screen.blit(rule_surface, rule_surface.get_rect(midleft=(215, y)))
         self.draw_button(screen, self.font, "开始游戏", START_BUTTON_RECT, mouse_pos)
         self.draw_button(screen, self.status_font or self.font, "退出游戏", START_EXIT_BUTTON_RECT, mouse_pos)
 
@@ -470,6 +494,8 @@ class ArrowGame:
         clock = pygame.time.Clock()
         self.font = self.load_font(32)
         self.status_font = self.load_font(24)
+        self.title_font = self.load_font(46, TITLE_FONT_PATH)
+        self.small_font = self.load_font(20)
         running = True
         while running:
             delta_time = clock.tick(60) / 1000
