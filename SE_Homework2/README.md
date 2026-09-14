@@ -41,6 +41,23 @@
 - Python 3.13+
 - Pygame
 
+## 安装和运行
+
+在 `SE_Homework2` 目录下执行：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python src\main.py
+```
+
+如果 PowerShell 阻止激活虚拟环境，可以先执行：
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
 ## 目录说明
 
 - `src/`：游戏源代码
