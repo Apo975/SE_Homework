@@ -474,11 +474,6 @@ def main() -> None:
                     is_paused = not is_paused
                     feedback = "游戏已暂停" if is_paused else "继续游戏"
                     continue
-                if is_paused:
-                    continue
-                if mistakes_left == 0:
-                    feedback = "失误次数已用完，请重新开始"
-                    continue
                 if PLAY_RESTART_BUTTON_RECT.collidepoint(event.pos):
                     reset_game(current_level)
                     selected_index = None
@@ -490,6 +485,11 @@ def main() -> None:
                     flying_progress = 0.0
                     shake_index = None
                     shake_frame = 0
+                    continue
+                if is_paused:
+                    continue
+                if mistakes_left == 0:
+                    feedback = "失误次数已用完，请重新开始"
                     continue
                 selected_index = get_arrow_at_position(event.pos)
                 if selected_index is None:
