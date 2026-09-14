@@ -271,20 +271,26 @@ def draw_status_panel(
     mistakes_left: int,
 ) -> None:
     """绘制游戏中的顶部状态信息。"""
-    panel = pygame.Rect(80, 45, 560, 75)
+    panel = pygame.Rect(40, 45, 640, 75)
     pygame.draw.rect(screen, SHADOW_COLOR, panel.move(0, 5), border_radius=16)
     pygame.draw.rect(screen, PANEL_COLOR, panel, border_radius=16)
 
     items = [
-        (f"第 {current_level + 1}/{level_count} 关", TEXT_COLOR),
-        (f"剩余箭头  {arrow_count}", TEXT_COLOR),
-        (f"剩余失误  {mistakes_left}", FEEDBACK_COLOR if mistakes_left <= 1 else TEXT_COLOR),
+        ("关卡", f"{current_level + 1}/{level_count}", TEXT_COLOR),
+        ("箭头", str(arrow_count), TEXT_COLOR),
+        ("失误", str(mistakes_left), FEEDBACK_COLOR if mistakes_left <= 1 else TEXT_COLOR),
     ]
-    centers = (170, 360, 550)
-    for (text, color), center_x in zip(items, centers):
-        label = font.render(text, True, color)
-        label_rect = label.get_rect(center=(center_x, 82))
+    centers = (150, 360, 570)
+    for (label_text, value_text, value_color), center_x in zip(items, centers):
+        label = font.render(label_text, True, SUBTLE_TEXT_COLOR)
+        value = font.render(value_text, True, value_color)
+        gap = 8
+        total_width = label.get_width() + gap + value.get_width()
+        start_x = center_x - total_width // 2
+        label_rect = label.get_rect(midleft=(start_x, 82))
+        value_rect = value.get_rect(midleft=(label_rect.right + gap, 82))
         screen.blit(label, label_rect)
+        screen.blit(value, value_rect)
 
 
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
@@ -317,6 +323,7 @@ def main() -> None:
     pygame.display.set_caption("一箭又一箭")
     clock = pygame.time.Clock()
     font = load_font(32)
+    status_font = load_font(24)
     selected_index = None
     feedback = "请点击一个箭头"
     mistakes_left = 3
@@ -402,7 +409,7 @@ def main() -> None:
             clock.tick(60)
             continue
 
-        draw_status_panel(screen, font, current_level, len(LEVELS), len(ARROWS), mistakes_left)
+        draw_status_panel(screen, status_font, current_level, len(LEVELS), len(ARROWS), mistakes_left)
         draw_board(screen)
         draw_arrows(screen, selected_index, shake_index, shake_frame)
         if flying_arrow is not None:
