@@ -22,9 +22,13 @@ ARROW_COLOR = (70, 125, 220)
 ARROW_HEAD_COLOR = (45, 90, 180)
 SELECTED_COLOR = (245, 180, 45)
 FEEDBACK_COLOR = (210, 90, 70)
+SUCCESS_COLOR = (45, 155, 90)
+BUTTON_COLOR = (70, 125, 220)
+BUTTON_TEXT_COLOR = (255, 255, 255)
+BUTTON_RECT = pygame.Rect(270, 755, 180, 45)
 
 # 第一关的固定箭头数据。row 和 col 表示箭头所在的棋盘格。
-ARROWS = [
+INITIAL_ARROWS = [
     {"row": 2, "col": 0, "direction": "right"},
     {"row": 2, "col": 3, "direction": "up"},
     {"row": 0, "col": 4, "direction": "down"},
@@ -32,6 +36,7 @@ ARROWS = [
     {"row": 5, "col": 5, "direction": "up"},
     {"row": 0, "col": 0, "direction": "right"},
 ]
+ARROWS = [arrow.copy() for arrow in INITIAL_ARROWS]
 
 
 def draw_board(screen: pygame.Surface) -> None:
@@ -147,6 +152,20 @@ def get_arrow_at_position(position: tuple[int, int]) -> int | None:
     return None
 
 
+def reset_game() -> None:
+    """恢复当前关卡的初始箭头布局。"""
+    ARROWS.clear()
+    ARROWS.extend(arrow.copy() for arrow in INITIAL_ARROWS)
+
+
+def draw_button(screen: pygame.Surface, font: pygame.font.Font, text: str) -> None:
+    """绘制重新开始按钮。"""
+    pygame.draw.rect(screen, BUTTON_COLOR, BUTTON_RECT, border_radius=8)
+    button_text = font.render(text, True, BUTTON_TEXT_COLOR)
+    text_rect = button_text.get_rect(center=BUTTON_RECT.center)
+    screen.blit(button_text, text_rect)
+
+
 def is_blocked(arrow: dict, arrows: list[dict]) -> bool:
     """判断箭头前进方向至棋盘边界之间是否存在其他箭头。"""
     row = arrow["row"]
@@ -180,6 +199,7 @@ def main() -> None:
     selected_index = None
     feedback = "请点击一个箭头"
     mistakes_left = 3
+    game_state = "playing"
 
     running = True
     while running:
@@ -187,6 +207,14 @@ def main() -> None:
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if game_state != "playing":
+                    if BUTTON_RECT.collidepoint(event.pos):
+                        reset_game()
+                        selected_index = None
+                        mistakes_left = 3
+                        feedback = "请点击一个箭头"
+                        game_state = "playing"
+                    continue
                 if mistakes_left == 0:
                     feedback = "失误次数已用完，请重新开始"
                     continue
@@ -198,12 +226,15 @@ def main() -> None:
                     selected_index = None
                     if mistakes_left == 0:
                         feedback = "失误次数已用完"
+                        game_state = "failed"
                     else:
                         feedback = f"前方有阻挡，失误次数 -1"
                 else:
                     ARROWS.pop(selected_index)
                     selected_index = None
                     feedback = "箭头飞出棋盘"
+                    if not ARROWS:
+                        game_state = "success"
 
         screen.fill(BACKGROUND_COLOR)
         title = font.render("一箭又一箭", True, TEXT_COLOR)
@@ -221,6 +252,17 @@ def main() -> None:
         feedback_text = font.render(feedback, True, FEEDBACK_COLOR)
         feedback_rect = feedback_text.get_rect(center=(WINDOW_WIDTH // 2, 730))
         screen.blit(feedback_text, feedback_rect)
+
+        if game_state == "success":
+            result = font.render("恭喜通关！", True, SUCCESS_COLOR)
+            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
+            screen.blit(result, result_rect)
+            draw_button(screen, font, "重新开始")
+        elif game_state == "failed":
+            result = font.render("挑战失败", True, FEEDBACK_COLOR)
+            result_rect = result.get_rect(center=(WINDOW_WIDTH // 2, 680))
+            screen.blit(result, result_rect)
+            draw_button(screen, font, "重新开始")
 
         pygame.display.flip()
         clock.tick(60)
